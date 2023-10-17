@@ -41,7 +41,7 @@ public class ContactAdapter extends ArrayAdapter<Contact> {
         nameTextView.setText(contact.getName());
         surNamesTextView.setText(contact.getSurnames());
 
-        //Devuelvo la vista
+        //Devuelvo la vista del adapter
         return convertView;
 
     }
