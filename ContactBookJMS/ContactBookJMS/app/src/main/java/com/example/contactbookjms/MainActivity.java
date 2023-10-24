@@ -8,18 +8,11 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ListView;
 
-import com.example.contactbookjms.adapters.ContactAdapter;
-import com.example.contactbookjms.datasources.DataSource;
-import com.example.contactbookjms.models.Contact;
-
-import java.sql.SQLException;
 import java.util.SortedSet;
-import java.util.TreeSet;
 
 public class MainActivity extends AppCompatActivity {
 
 
-    private DataSource contactDataSource;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,18 +23,11 @@ public class MainActivity extends AppCompatActivity {
         Button btnDelete = (Button) findViewById(R.id.btnDelete);
 
 
-        contactDataSource = new DataSource(this);
 
-        //Al iniciar esta actividad nos traemos todos los contactos almacenados actualmente
-        SortedSet<Contact> contacts = new TreeSet<>();
-        try {
-            contacts = contactDataSource.getAllContacts();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        SortedSet<Contact> contacts = Database.listContacts;
 
-
-
+        //Llamamos al metodo para tener contactos por defecto en el listview
+        Database.fillOutListView();
 
         //Instanciamos el ContactAdapter
         ContactAdapter adapter = new ContactAdapter((Context) this, contacts);
@@ -55,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
             // lo almacenamos en una variable
             Contact contact = (Contact) parent.getItemAtPosition(position);
 
-            //Creamos un intent para ir a la actividad de editar contactos
+            //Aqui creamos un intent para dirigirnos a la actividad EditContacts
             Intent intent = new Intent(this, EditContacts.class);
 
             //Con esto pasamos los datos del contacto que he clicado a la vista
@@ -66,39 +52,34 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("id", contact.getId());
 
 
-            //Aqui por ultimo nos dirigimos a la actividad
+            //Aqui por ultimo nos dirigimos a la vista
             startActivity(intent);
-
-
-
 
         });
 
-        //Si pulso el boton btnAdd pasamos a la actividad de inserrtar contactos
+
+
+        //Aqui indicamos que al hacer click en el btnAdd nos dirigamos a la ventana para añadir los contactos
         btnAdd.setOnClickListener(v -> {
 
             Intent viewNameIntent = new Intent(this, ActivityAddContacts.class);
-
-
-
             startActivity(viewNameIntent);
 
 
 
         });
 
-        //Si pulsamos el boton btnDelete pasamos a la actividad de eliminar contactos
+        //Aqui indicamos que al pulsar el boton btnDelete se abra la ventana DeleteContacts
         btnDelete.setOnClickListener(v -> {
 
             Intent viewNameIntent = new Intent(this, DeleteContacts.class);
-
-
-
             startActivity(viewNameIntent);
 
 
 
         });
+
+
 
     }
 }

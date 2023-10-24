@@ -19,6 +19,11 @@
             android:name=".DeleteContacts"
             android:exported="false" />
         <activity
+            android:name=".MainActivity2"
+            android:exported="false"
+            android:label="@string/title_activity_main2"
+            android:theme="@style/Theme.ContactBookJMS" />
+        <activity
             android:name=".DeleteContact"
             android:exported="false" />
         <activity
