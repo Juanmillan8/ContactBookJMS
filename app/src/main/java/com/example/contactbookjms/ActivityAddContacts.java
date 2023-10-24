@@ -9,10 +9,15 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.example.contactbookjms.datasources.DataSource;
+import com.example.contactbookjms.models.Contact;
+
+import java.sql.SQLException;
+
 //Clase para añdir contactos nuevos a la lista
 public class ActivityAddContacts extends AppCompatActivity {
 
-
+    private DataSource contactDataSource;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,15 +29,24 @@ public class ActivityAddContacts extends AppCompatActivity {
         Button btnCancel = (Button) findViewById(R.id.btnCancel);
 
 
-        //Aqui me dirijo al metodo saveContact() o al metodo cancel() dependiendo de cual boton pulse
-        btnSave.setOnClickListener(v -> saveContact());
+        //Aqui me dirijo al metodo saveContact() o al metodo cancel() dependiendo de cual boton pulse,
+        // debo introducir en un try catch en el boton saveContact porque dicho metodo puede lanzar una
+        // excepcion SQLException
+        btnSave.setOnClickListener(v -> {
+            try {
+                saveContact();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
         btnCancel.setOnClickListener(v -> cancel());
 
     }
 
     //Metodo saveContact que se usara para añadir contactos
-    private void saveContact() {
-
+    private void saveContact() throws SQLException {
+        contactDataSource = new DataSource(this);
 
         EditText ptName = (EditText) findViewById(R.id.ptName);
         EditText ptSurnames = (EditText) findViewById(R.id.ptSurnames);
@@ -45,52 +59,46 @@ public class ActivityAddContacts extends AppCompatActivity {
         String surnames = String.valueOf(ptSurnames.getText());
         String number = String.valueOf(ptNumber.getText());
         String mail = String.valueOf(ptMail.getText());
-        //Llamamos al metodo getId de la clase Database y le sumamos 1, para que no nos devuelva la id
-        //del ultimo contacto añadido existente, ya que nos daria error
-        int id = Database.getId() + 1;
 
         //Si no he insertado nada en los campos de texto muestro un mensaje de error
-        if (name.length() == 0 || surnames.length() == 0 || number.length() == 0 || mail.length() == 0) {
+        if(name.length() == 0 || surnames.length() == 0 || number.length() == 0 || mail.length() == 0) {
             tvGrettings.setText("Error, debes insertar datos en los campos de texto");
             tvGrettings.setTextColor(Color.RED);
+        }else{
 
-        } else {
+                //Booleano igual para hacer una cosa u otra en caso de tener un contacto repetido
+                boolean igual = false;
 
-            //En caso contrario creamos un contacto nuevo con los datos que he insertado en los campos
-            //de texto
-            Contact c = new Contact(name, surnames, number, mail, id);
+                //Aqui recorremos la lista de contactos y si encontramos un contacto con el mismo numero que el
+                //numero del contacto que queremos añadir mostramos un mensaje de error y cambiamos el booleano
+                //repetido a true
+                for (Contact contact : contactDataSource.getAllContacts()) {
 
-            //Booleano repetido para hacer una cosa u otra en caso de tener un contacto repetido
-            boolean repetido=false;
 
-            //Aqui recorremos la lista de contactos y si encontramos un contacto con el mismo numero que el
-            //numero del contacto que queremos añadir mostramos un mensaje de error y cambiamos el booleano
-            //repetido a true
-                for (Contact contact : Database.listContacts) {
                     if (contact.equals(number)) {
                         tvGrettings.setText("Error, no puedes añadir dos numeros iguales");
                         tvGrettings.setTextColor(Color.RED);
-                        repetido=true;
+                        igual=true;
                         break;
-                        }
-
-
                     }
-            //Si el booleano repetido esta a false añadimos el contacto a la lista y
-            // volvemos a la actividad principal para ver los cambios
-            if (!repetido){
-
-                Database.listContacts.add(c);
-                Intent viewNameIntent = new Intent(this, MainActivity.class);
-                startActivity(viewNameIntent);
-            }
 
                 }
 
+                //Si el booleano repetido esta a false añadimos el contacto a la lista y
+                // volvemos a la actividad principal para ver los cambios
+                if (!igual){
+
+                    contactDataSource.insertContact(name, surnames, number, mail);
+
+                    Intent viewNameIntent = new Intent(this, MainActivity.class);
+                    startActivity(viewNameIntent);
+
+                }
+
+        }
 
 
-
-            }
+    }
 
     //Metodo cancel para volver a la MainActivity
     private void cancel(){

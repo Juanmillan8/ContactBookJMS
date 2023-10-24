@@ -9,9 +9,15 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.example.contactbookjms.datasources.DataSource;
+import com.example.contactbookjms.models.Contact;
+
+import java.sql.SQLException;
+
 //Clase para editar contactos
 public class EditContacts extends AppCompatActivity {
 
+    private DataSource contactDataSource;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,21 +37,25 @@ public class EditContacts extends AppCompatActivity {
         ptNumber.setText(viewMainIntent.getStringExtra("number"));
         ptMail.setText(viewMainIntent.getStringExtra("email"));
 
-
-
         Button btnSave = (Button) findViewById(R.id.btnSave);
         Button btnCancel = (Button) findViewById(R.id.btnCancel);
 
         //Aqui me dirijo al metodo edit() o al metodo cancel() dependiendo del boton al que pulse
-        btnSave.setOnClickListener(v -> edit());
+        btnSave.setOnClickListener(v -> {
+            try {
+                edit();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
         btnCancel.setOnClickListener(v -> cancel());
 
 
     }
 
     //Metodo edit() para editar contactos
-    private void edit(){
-
+    private void edit() throws SQLException {
+        contactDataSource = new DataSource(this);
 
         Intent viewMainIntent = getIntent();
 
@@ -73,7 +83,7 @@ public class EditContacts extends AppCompatActivity {
         }else {
 
             //Si no, recorremos la lista de contactos
-            for (Contact contact : Database.listContacts) {
+            for (Contact contact : contactDataSource.getAllContacts()) {
                 //Si encontramos un contacto con el mismo id del que estamos editando hacemos lo siguiente
                 if (contact.getId() == id) {
                     //Usamos el metodo numberEquals para impedir que se puedan editar contactos
@@ -87,11 +97,8 @@ public class EditContacts extends AppCompatActivity {
                         //Si el numero que queremos editar no lo tenemos ya almacenado editamos el contacto
                         //con todos los datos que he insertado en los campos de texto y posteriormente
                         //vuelvo a la MainActivity para ver los cambios
-                        contact.setSurnames(surnames);
-                        contact.setName(name);
-                        contact.setEmail(email);
-                        contact.setNumber(number);
 
+                        contactDataSource.updateContact(id, name,surnames, number, email);
                         Intent viewNameIntent = new Intent(this, MainActivity.class);
                         startActivity(viewNameIntent);
                     }
@@ -101,13 +108,13 @@ public class EditContacts extends AppCompatActivity {
     }
 
     //Metodo para evitar editar añadir contactos con el mismo numero
-    private boolean numberEquals(String number, int id){
+    private boolean numberEquals(String number, int id) throws SQLException {
 
         //Boolean igual inicializada a false
         boolean igual = false;
 
         //Recorremos la lista de contacos
-        for (Contact contact : Database.listContacts) {
+        for (Contact contact : contactDataSource.getAllContacts()) {
             //Si encontramos un contacto con el mismo numero hacemos lo siguiente
             if (contact.equals(number)) {
                 //Si tiene el mismo id que el contacto que estoy editando significa que es el contacto que
@@ -115,9 +122,9 @@ public class EditContacts extends AppCompatActivity {
                 if (contact.getId()==id){
                     break;
                 }else {
-                  //Si nos encontramos un contacto con el mismo numero pero con diferente id significa que
-                  //hay un contacto diferente pero con el mismo numero, por lo tanto cambiamos el booleano
-                  //igual a true
+                    //Si nos encontramos un contacto con el mismo numero pero con diferente id significa que
+                    //hay un contacto diferente pero con el mismo numero, por lo tanto cambiamos el booleano
+                    //igual a true
                     igual=true;
                     break;
                 }
